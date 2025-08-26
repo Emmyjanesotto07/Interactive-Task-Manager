@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Task Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <style>
+         * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(45deg, #c8cffc, #d8ddf8);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+.container {
+    flex: 1;
+    padding: 30px;
+}
+
+h1 {
+    text-align: center;
+    color: #141414;
+    margin-bottom: 20px;
+}
+
+.input-section, .search-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.input-section input, .input-section select, .search-section input, button {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.input-section input, .search-section input {
+    flex-grow: 1;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.column {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.column h2 {
+    text-align: center;
+    color: #555;
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ddd;
+}
+
+.task {
+    background-color: #fff;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: grab;
+    border-left: 5px solid;
+}
+
+.task:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.task.low {
+    border-left-color: #4caf50; 
+}
+
+.task.medium {
+    border-left-color: #ff9800; 
+}
+
+.task.high {
+    border-left-color: #f44336; 
+}
+    </style>
+    
+    <div class="container">
+        <h1>Interactive Task Manager</h1>
+        <div class="input-section">
+            <input type="text" id="newTask" placeholder="New">
+            <select id="prioritySelect">
+                <option value="low">Low Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="high">High Priority</option>
+            </select>
+            <button id="addTaskBtn">Add Task</button>
+        </div>
+        <div class="search-section">
+            <input type="text" id="searchTask" placeholder="Search">
+            <button id="clearSearchBtn">Clear</button>
+        </div>
+        <div class="board">
+            <div class="column" id="todo-column">
+                <h2>To Do</h2>
+                <div class="task-list" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+                <div class="task low Priority">Mag Laba</div>
+                <div class="task Medium Priority">bumili</div>
+                <div class="task high Priority">Mag linis ng bahay</div>
+                
+            </div>
+            <div class="column" id="in-progress-column">
+                <h2>In Progress</h2>
+                <div class="task-list" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+                <div class="task low Priority">Mag Saing</div>
+            </div>
+            <div class="column" id="done-column">
+                <h2>Done</h2>
+                <div class="task-list" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+                <div class="task high Priority"> Laba</div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js">
+        document.addEventListener('DOMContentLoaded', () => {
+    const newTaskInput = document.getElementById('newTask');
+    const prioritySelect = document.getElementById('prioritySelect');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const searchTaskInput = document.getElementById('searchTask');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const todoList = document.querySelector('#todo-column .task-list');
+
+    addTaskBtn.addEventListener('click', addTask);
+    clearSearchBtn.addEventListener('click', () => {
+        searchTaskInput.value = '';
+        filterTasks();
+    });
+    searchTaskInput.addEventListener('input', filterTasks);
+
+    function addTask() {
+        const taskText = newTaskInput.value.trim();
+        if (taskText === '') {
+            return;
+        }
+
+        const taskPriority = prioritySelect.value;
+        const taskElement = document.createElement('div');
+        taskElement.classList.add('task', taskPriority);
+        taskElement.setAttribute('draggable', true);
+        taskElement.textContent = taskText;
+
+        taskElement.addEventListener('dragstart', dragStart);
+
+        todoList.appendChild(taskElement);
+        newTaskInput.value = '';
+    }
+
+    function filterTasks() {
+        const searchText = searchTaskInput.value.toLowerCase();
+        const allTasks = document.querySelectorAll('.task');
+        allTasks.forEach(task => {
+            const taskText = task.textContent.toLowerCase();
+            if (taskText.includes(searchText)) {
+                task.style.display = 'block';
+            } else {
+                task.style.display = 'none';
+            }
+        });
+    }
+
+    let draggedItem = null;
+
+    function dragStart(e) {
+        draggedItem = this;
+        setTimeout(() => this.style.opacity = '0.5', 0);
+    }
+
+    const taskLists = document.querySelectorAll('.task-list');
+    taskLists.forEach(list => {
+        list.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        list.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.target.classList.contains('task-list')) {
+                e.target.appendChild(draggedItem);
+            } else {
+                e.target.closest('.task-list').appendChild(draggedItem);
+            }
+            draggedItem.style.opacity = '1';
+            draggedItem = null;
+        });
+    });
+
+   
+    document.addEventListener('dragend', () => {
+        if (draggedItem) {
+            draggedItem.style.opacity = '1';
+            draggedItem = null;
+        }
+    });
+
+    window.allowDrop = (e) => {
+        e.preventDefault();
+    };
+
+    window.drop = (e) => {
+        e.preventDefault();
+        const targetList = e.target.classList.contains('task-list') ? e.target : e.target.closest('.task-list');
+        if (targetList && draggedItem) {
+            targetList.appendChild(draggedItem);
+            draggedItem.style.opacity = '1';
+            draggedItem = null;
+        }
+    };
+});
+    </script>
+</body>
+</html>
